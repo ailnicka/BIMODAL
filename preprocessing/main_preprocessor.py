@@ -19,7 +19,7 @@ def preprocess_data(filename_in='../data/chembl_smiles', filename_out='', model_
     FG, v1
     """
 
-    from preprocessor import Preprocessor
+    from preprocessing.preprocessor import Preprocessor
     p = Preprocessor(filename_in)
     print('Pre-processing of "' + filename_in + '" started.')
 
