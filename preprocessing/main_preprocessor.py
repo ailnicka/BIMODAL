@@ -55,7 +55,7 @@ def preprocess_data(filename_in='../data/chembl_smiles', filename_out='', model_
     else:
         if augmentation > 1 and starting_point is 'fixed':  # removes augmentation for fixed starting point
             augmentation = 1
-        name = model_type + "_" + starting_point + "_aug_" + augmentation
+        name = model_type + "_" + starting_point + "_aug_" + str(augmentation)
     p.preprocess(name, aug=augmentation, length=max_len)
 
     if filename_out is '':
