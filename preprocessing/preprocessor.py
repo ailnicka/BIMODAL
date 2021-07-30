@@ -24,9 +24,9 @@ class Preprocessor:
 
         if os.path.isfile(name + '.csv'):
             self._data = pd.read_csv(name + '.csv', header=None).values[:, 0]
-        elif os.path.isfile(dname + '.tar.xz'):
+        elif os.path.isfile(name + '.tar.xz'):
             # Skip first line since empty and last line since nan
-            self._data = pd.read_csv(data_name + '.tar.xz', compression='xz', header=None).values[1:-1, 0]
+            self._data = pd.read_csv(name + '.tar.xz', compression='xz', header=None).values[1:-1, 0]
 
         # Remove empty dimensions
         self._data = np.squeeze(self._data)
@@ -190,7 +190,7 @@ class Preprocessor:
         data = []
         for i, s in enumerate(self._data):
             data.append(token + s)
-        self._data = data
+        self._data = np.array(data)
         return
 
     def add_ending(self, token='E'):
@@ -201,7 +201,7 @@ class Preprocessor:
         data = []
         for i, s in enumerate(self._data):
             data.append(s + token)
-        self._data = data
+        self._data = np.array(data)
         return
 
     def add_middle(self, token='G'):
@@ -213,7 +213,7 @@ class Preprocessor:
         for i, s in enumerate(self._data):
             mid = len(s) // 2
             data.append(s[:mid] + token + s[mid:])
-        self._data = data
+        self._data = np.array(data)
         return
 
     def add_token_random_padding(self, start_token='G', pad_token='A', aug=5, l=0):
@@ -291,7 +291,7 @@ class Preprocessor:
         data = []
         for i, s in enumerate(self._data):
             data.append(s.ljust(l, token))
-        self._data = data
+        self._data = np.array(data)
         return l
 
     def padding_left_right(self, token='A', l=0):
@@ -307,7 +307,7 @@ class Preprocessor:
         data = []
         for i, s in enumerate(self._data):
             data.append(s.center(l, token))
-        self._data = data
+        self._data = np.array(data)
         return l
 
     def save_data(self, name='data.csv'):
