@@ -5,7 +5,7 @@ Implementation of Neural Autoregressive Distribution Estimator (NADE)
 import numpy as np
 import torch
 import torch.nn as nn
-from one_out_lstm import OneOutLSTM
+from model.one_out_lstm import OneOutLSTM
 
 torch.manual_seed(1)
 np.random.seed(5)

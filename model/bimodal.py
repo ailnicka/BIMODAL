@@ -5,7 +5,7 @@ Implementation of BIMODAL to generate SMILES
 import numpy as np
 import torch
 import torch.nn as nn
-from bidir_lstm import BiDirLSTM
+from model.bidir_lstm import BiDirLSTM
 
 torch.manual_seed(1)
 np.random.seed(5)

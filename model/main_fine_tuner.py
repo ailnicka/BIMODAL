@@ -1,4 +1,4 @@
-from fine_tuner import FineTuner
+from model.fine_tuner import FineTuner
 
 for m in ['BIMODAL_random_512_FineTuning_template']:
     t = FineTuner(m)

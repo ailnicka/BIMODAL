@@ -6,13 +6,13 @@ Implementation of the sampler to generate SMILES from a trained model
 import pandas as pd
 import numpy as np
 import configparser
-from fb_rnn import FBRNN
-from forward_rnn import ForwardRNN
-from nade import NADE
-from one_hot_encoder import SMILESEncoder
-from bimodal import BIMODAL
+from model.fb_rnn import FBRNN
+from model.forward_rnn import ForwardRNN
+from model.nade import NADE
+from model.one_hot_encoder import SMILESEncoder
+from model.bimodal import BIMODAL
 import os
-from helper import clean_molecule, check_valid
+from model.helper import clean_molecule, check_valid
 
 np.random.seed(1)
 

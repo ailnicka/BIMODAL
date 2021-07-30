@@ -1,4 +1,4 @@
-from trainer import Trainer
+from model.trainer import Trainer
 
 for m in ['BIMODAL_random_512']:
     t = Trainer(m)

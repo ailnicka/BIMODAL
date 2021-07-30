@@ -6,14 +6,14 @@ import numpy as np
 from sklearn.model_selection import KFold, train_test_split, ShuffleSplit
 import pandas as pd
 import configparser
-from fb_rnn import FBRNN
-from forward_rnn import ForwardRNN
-from nade import NADE
-from bimodal import BIMODAL
-from one_hot_encoder import SMILESEncoder
+from model.fb_rnn import FBRNN
+from model.forward_rnn import ForwardRNN
+from model.nade import NADE
+from model.bimodal import BIMODAL
+from model.one_hot_encoder import SMILESEncoder
 from sklearn.utils import shuffle
 import os
-from helper import clean_molecule, check_model, check_molecules
+from model.helper import clean_molecule, check_model, check_molecules
 
 np.random.seed(1)
 

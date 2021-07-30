@@ -5,7 +5,7 @@ Implementation of one-directional RNN for SMILES generation
 import numpy as np
 import torch
 import torch.nn as nn
-from one_out_lstm import OneOutLSTM
+from model.one_out_lstm import OneOutLSTM
 import torch.nn.functional as F
 from scipy.misc import logsumexp
 

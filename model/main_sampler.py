@@ -1,4 +1,4 @@
-from sample import Sampler
+from model.sample import Sampler
 
 for model in ['BIMODAL_fixed_512', 'BIMODAL_fixed_1024',
               'BIMODAL_random_512', 'BIMODAL_random_1024', 'BIMODAL_random_512_aug_5', 'BIMODAL_random_1024_aug_5',

@@ -5,7 +5,7 @@ Implementation of synchronous Forward Backward Models
 import numpy as np
 import torch
 import torch.nn as nn
-from two_out_lstm_v2 import TwoOutLSTM_v2
+from model.two_out_lstm_v2 import TwoOutLSTM_v2
 
 torch.manual_seed(1)
 np.random.seed(5)
