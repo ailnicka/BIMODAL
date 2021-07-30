@@ -53,10 +53,9 @@ def preprocess_data(filename_in='../data/chembl_smiles', filename_out='', model_
     if model_type == "ForwardRNN":
         name = model_type
     else:
-        name = model_type + "_" + starting_point
         if augmentation > 1 and starting_point is 'fixed':  # removes augmentation for fixed starting point
             augmentation = 1
-
+        name = model_type + "_" + starting_point + "_aug_" + augmentation
     p.preprocess(name, aug=augmentation, length=max_len)
 
     if filename_out is '':
