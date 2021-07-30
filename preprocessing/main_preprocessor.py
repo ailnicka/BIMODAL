@@ -60,7 +60,7 @@ def preprocess_data(filename_in='../data/chembl_smiles', filename_out='', model_
     p.preprocess(name, aug=augmentation, length=max_len)
 
     if filename_out is '':
-        filename_out = '../data/' + dataname + '_' + name + '.csv'
+        filename_out = 'data/' + dataname + '_' + name + '.csv'
 
     # Store new file
     p.save_data(filename_out)
