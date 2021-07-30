@@ -24,27 +24,15 @@ class BIMODAL():
         # Learning rate
         self._lr = lr
 
-        # Build new model
-        self._lstm = BiDirLSTM(self._input_dim, self._hidden_units, self._layer)
-
         # Check availability of GPUs
-        self._gpu = torch.cuda.is_available()
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        if torch.cuda.is_available():
-            self._lstm = self._lstm.cuda()
-            print('GPU available')
-
-        # Adam optimizer
-        self._optimizer = torch.optim.Adam(self._lstm.parameters(), lr=self._lr, betas=(0.9, 0.999))
-        # Cross entropy loss
-        self._loss = nn.CrossEntropyLoss(reduction='mean')
 
     def build(self, name=None):
         """Build new model or load model by name
         :param name:    model name
         """
 
-        if (name is None):
+        if name is None:
             self._lstm = BiDirLSTM(self._input_dim, self._hidden_units, self._layer)
 
         else:
@@ -53,7 +41,10 @@ class BIMODAL():
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()
 
+        # Adam optimizer
         self._optimizer = torch.optim.Adam(self._lstm.parameters(), lr=self._lr, betas=(0.9, 0.999))
+        # Cross entropy loss
+        self._loss = nn.CrossEntropyLoss(reduction='mean')
 
     def print_model(self):
         '''Print name and shape of all tensors'''
