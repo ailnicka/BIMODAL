@@ -6,14 +6,12 @@ import numpy as np
 from sklearn.model_selection import KFold, train_test_split, ShuffleSplit
 import pandas as pd
 import configparser
-from model.fb_rnn import FBRNN
-from model.forward_rnn import ForwardRNN
-from model.nade import NADE
 from model.bimodal import BIMODAL
 from model.one_hot_encoder import SMILESEncoder
 from sklearn.utils import shuffle
 import os
 from model.helper import clean_molecule, check_model, check_molecules
+from ast import literal_eval
 
 np.random.seed(1)
 
@@ -44,6 +42,10 @@ class Trainer():
         self._n_folds = int(self._config['TRAINING']['n_folds'])
         self._learning_rate = float(self._config['TRAINING']['learning_rate'])
         self._batch_size = int(self._config['TRAINING']['batch_size'])
+        try:
+            self._freeze_layer = literal_eval(self._config['TRAINING']['freeze_layer'])
+        except KeyError:
+            self._freeze_layer = []
 
         self._samples = int(self._config['EVALUATION']['samples'])
         self._T = float(self._config['EVALUATION']['temp'])
@@ -53,22 +55,16 @@ class Trainer():
         except KeyError:
             self._period = 1
 
-        if self._model_type == 'FBRNN':
-            self._model = FBRNN(self._molecular_size, self._encoding_size,
-                                self._learning_rate, self._hidden_units)
-        elif self._model_type == 'ForwardRNN':
-            self._model = ForwardRNN(self._molecular_size, self._encoding_size,
-                                     self._learning_rate, self._hidden_units)
-
-        elif self._model_type == 'BIMODAL':
-            self._model = BIMODAL(self._molecular_size, self._encoding_size,
+        if self._model_type == 'BIMODAL':
+            if self._start_model:
+                self._model = BIMODAL(self._molecular_size, self._encoding_size,
+                                  self._learning_rate, self._hidden_units,
+                                  self._start_model, self._freeze_layer)  # only when restarting from existing model
+            else:
+                self._model = BIMODAL(self._molecular_size, self._encoding_size,
                                   self._learning_rate, self._hidden_units)
-
-        elif self._model_type == 'NADE':
-            self._generation = self._config['MODEL']['generation']
-            self._missing_token = self._encoder.encode([self._config['TRAINING']['missing_token']])
-            self._model = NADE(self._molecular_size, self._encoding_size, self._learning_rate,
-                               self._hidden_units, self._generation, self._missing_token)
+        else:
+            raise NotImplementedError("No longer allowing other models than BIMODAL")
 
         self._data = self._encoder.encode_from_file(self._file_name)
 
@@ -94,24 +90,8 @@ class Trainer():
         # Compute labels
         label = np.argmax(self._data, axis=-1).astype(int)
 
-        # Special preprocessing in the case of NADE
-        if self._model_type == 'NADE' and self._generation == 'random':
-            # First column stores correct SMILES and second column stores SMILES with missing values
-            label = np.argmax(self._data[:, 0], axis=-1).astype(int)
-            aug = self._data.shape[1] - 1
-            label = np.repeat(label[:, np.newaxis, :], aug, axis=1)
-            self._data = self._data[:, 1:]
-
-        # Build model
-        if self._start_model:
-            self._model.build(self._start_model)
-        else:
-            self._model.build()
-
-
         # Store total Statistics
         tot_stat = []
-
 
         # Shuffle data before training (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
         # to  (all_SMILES, molecular_size, encoding_size))
@@ -168,22 +148,9 @@ class Trainer():
         # Compute labels
         label = np.argmax(self._data, axis=-1).astype(int)
 
-        # Special preprocessing in the case of NADE
-        if (self._model_type == 'NADE' or self._model_type == 'NADE_v2') and self._generation == 'random':
-            # First column stores correct SMILES and second column stores SMILES with missing values
-            label = np.argmax(self._data[:, 0], axis=-1).astype(int)
-            aug = self._data.shape[1] - 1
-            label = np.repeat(label[:, np.newaxis, :], aug, axis=1)
-            self._data = self._data[:, 1:]
-
         # Split data into train and test data
         train_data, test_data, train_label, test_label = train_test_split(self._data, label, test_size= 1.0/self._n_folds,
                                                                           random_state=1, shuffle=True)
-        # Build model
-        if self._start_model:
-            self._model.build(self._start_model)
-        else:
-            self._model.build()
 
         # Store total Statistics
         tot_stat = []

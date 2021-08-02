@@ -11,10 +11,13 @@ torch.manual_seed(1)
 np.random.seed(5)
 
 
-class BIMODAL():
+class BIMODAL:
 
-    def __init__(self, molecule_size=7, encoding_dim=55, lr=.01, hidden_units=128):
-
+    def __init__(self, molecule_size=7, encoding_dim=55, lr=.01, hidden_units=128, name=None, layers_to_freeze=[]):
+        """Build new model or load model by name
+        :param name:    model name
+        :param layers_to_freeze: which layers shall be frozen during training: applies to model loaded from file
+        """
         self._molecule_size = molecule_size
         self._input_dim = encoding_dim
         self._output_dim = encoding_dim
@@ -27,22 +30,22 @@ class BIMODAL():
         # Check availability of GPUs
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    def build(self, name=None):
-        """Build new model or load model by name
-        :param name:    model name
-        """
-
         if name is None:
             self._lstm = BiDirLSTM(self._input_dim, self._hidden_units, self._layer)
 
         else:
             self._lstm = torch.load(name + '.dat', map_location=self._device)
+            if len(layers_to_freeze) != 0:
+                for layer in layers_to_freeze:
+                    for name, param in self._lstm.named_parameters():
+                        if layer in name:
+                            param.requires_grad = False
 
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()
 
-        # Adam optimizer
-        self._optimizer = torch.optim.Adam(self._lstm.parameters(), lr=self._lr, betas=(0.9, 0.999))
+        # Adam optimizer: only take into optimisation the un-frozen layers
+        self._optimizer = torch.optim.Adam(filter(lambda p: p.reqires_grad,  self._lstm.parameters()), lr=self._lr, betas=(0.9, 0.999))
         # Cross entropy loss
         self._loss = nn.CrossEntropyLoss(reduction='mean')
 

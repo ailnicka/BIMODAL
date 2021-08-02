@@ -51,6 +51,7 @@ class BiDirLSTM(nn.Module):
         nn.init.xavier_uniform_(self._wpred.weight)
         self._wpred.bias.data.fill_(0.0)
 
+
     def _init_hidden(self, batch_size, device):
         '''Initialize hidden states
         :param batch_size:   size of the new batch
