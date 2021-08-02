@@ -15,10 +15,11 @@ from ast import literal_eval
 
 np.random.seed(1)
 
+GENERATION_TYPES = ['both', 'random', 'beam_search']
 
 class Trainer():
 
-    def __init__(self, experiment_name='ForwardRNN'):
+    def __init__(self, experiment_name='BIMODAL'):
 
         self._encoder = SMILESEncoder()
 
@@ -55,6 +56,18 @@ class Trainer():
         except KeyError:
             self._period = 1
 
+        try:
+            self._generation_type = self._config['EVALUATION']['generation_type']
+            if self._generation_type not in GENERATION_TYPES:
+                raise KeyError
+        except KeyError:
+            self._generation_type = 'both'
+
+        try:
+            self._beam_width = self._config['EVALUATION']['beam_width']
+        except KeyError:
+            self._beam_width = 15
+
         if self._model_type == 'BIMODAL':
             if self._start_model:
                 self._model = BIMODAL(self._molecular_size, self._encoding_size,
@@ -69,6 +82,7 @@ class Trainer():
         self._data = self._encoder.encode_from_file(self._file_name)
 
     def run(self, stor_dir='evaluation/'):
+
         if self._n_folds == 0:
             self.run_without_validation(stor_dir)
         else:
@@ -117,17 +131,13 @@ class Trainer():
                 self._model.save(
                     stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(i))
 
-                # Sample new molecules
-                new_molecules = []
-                for s in range(self._samples):
-                    mol = self._encoder.decode(self._model.sample(self._starting_token, self._T))
-                    new_molecules.append(clean_molecule(mol[0], self._model_type))
+                if self._generation_type in ['both', 'random']:
+                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(i) + '.csv'
+                    self.sample_random(filename)
 
-                # Store new molecules
-                new_molecules = np.array(new_molecules)
-                pd.DataFrame(new_molecules).to_csv(
-                    stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(
-                        i) + '.csv', header=None)
+                if self._generation_type in ['both', 'beam_search']:
+                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(i) + '.csv'
+                    self.beam_search(filename)
 
     def run_with_validation(self, stor_dir='../evaluation/'):
         '''Training with validation and store data'''
@@ -192,15 +202,24 @@ class Trainer():
                 self._model.save(
                     stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(i))
 
-                # Sample new molecules
-                new_molecules = []
-                for s in range(self._samples):
-                    mol = self._encoder.decode(self._model.sample(self._starting_token, self._T))
-                    new_molecules.append(clean_molecule(mol[0], self._model_type))
+                if self._generation_type in ['both', 'random']:
+                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(i) + '.csv'
+                    self.sample_random(filename)
 
-                # Store new molecules
-                new_molecules = np.array(new_molecules)
-                pd.DataFrame(new_molecules).to_csv(
-                    stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(
-                        i) + '.csv', header=None)
+                if self._generation_type in ['both', 'beam_search']:
+                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(i) + '.csv'
+                    self.beam_search(filename)
 
+    def sample_random(self, filename):
+        new_molecules = []
+        for s in range(self._samples):
+            mol = self._encoder.decode(self._model.sample(self._starting_token, self._T))
+            new_molecules.append(clean_molecule(mol[0], self._model_type))
+        new_molecules = np.array(new_molecules)
+        pd.DataFrame(new_molecules).to_csv(filename, header=None)
+
+    def beam_search(self, filename):
+        molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
+        molecules = [self._encoder.decode(mol) for mol in molecules]
+        molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
+        pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename)
