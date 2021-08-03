@@ -3,7 +3,6 @@ Implementation of one-hot-encoder for SMILES strings
 """
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
 import os
 import sys
 
@@ -21,8 +20,20 @@ class SMILESEncoder():
                                 'a', 'b', 'c', 'd', 'e', 'g', 'i', 'l', 'n', 'o', 'p', 'r', 's', 't'
                                 ])
 
-        # Dictionary mapping index to token
-        self._encoder = OneHotEncoder(categories=[self._tokens], dtype=np.uint8, sparse=False)
+        num_tokens = len(self._tokens)
+
+        self._id_matrix = np.eye(num_tokens, dtype=int)
+        self._idx_range = np.array(range(num_tokens), dtype=int)
+        self._token_to_idx = {v: i for i, v in enumerate(self._tokens)}
+
+        self._encode_many = np.vectorize(self._encode_one, signature=f'()->(K,{num_tokens})')
+        self._decode_many = np.vectorize(self._decode_one, signature=f'(K,{num_tokens})->()')
+
+    def _encode_one(self, molecule):
+        return np.array([self._id_matrix[self._token_to_idx[char]] for char in molecule])
+
+    def _decode_one(self, encoding):
+        return ''.join(self._tokens[np.dot(encoding, self._idx_range).astype(int)])
 
     def encode_from_file(self, name='data'):
         '''One-hot-encoding from .csv file
@@ -40,15 +51,11 @@ class SMILESEncoder():
             print('CAN NOT READ DATA')
             sys.exit()
 
-        # Store dimensions
-        shape = data.shape
-        data = data.reshape(-1)
-        print(shape)
-        # Remove empty dimensions
-        data = np.squeeze(data)
+        print(f"Encoding data {data.shape}")
+        data = self.encode(data)
+        print(f"Encoded data {data.shape}")
 
-        # Return array with same first and second dimensions as input
-        return self.encode(data).reshape((shape[0], shape[1], -1, len(self._tokens)))
+        return data
 
     def encode(self, data):
         '''One-hot-encoding
@@ -56,20 +63,7 @@ class SMILESEncoder():
         :return one_hot:     encoded data (sample size, molecule size, allowed token size)
         '''
 
-        # Split SMILES into characters
-        data = self.smiles_to_char(data)
-
-        # Store dimensions and reshape to use encoder
-        shape = data.shape
-        data = data.reshape((-1, 1))
-
-        # Encode SMILES
-        data = self._encoder.fit_transform(data)
-
-        # Restore shape
-        data = data.reshape((shape[0], shape[1], -1))
-
-        return data
+        return self._encode_many(data)
 
     def decode(self, one_hot):
         '''Decode one-hot encoding to SMILES
@@ -77,40 +71,4 @@ class SMILESEncoder():
         :return data:      SMILES (sample size,)
         '''
 
-        # Store dimensions and reshape to use encoder
-        shape = one_hot.shape[0]
-        one_hot = one_hot.reshape((-1, len(self._tokens)))
-
-        # Decode SMILES
-        data = self._encoder.inverse_transform(one_hot)
-
-        # Restore shape
-        data = data.reshape((shape, -1))
-        # Merge char to SMILES
-        smiles = self.char_to_smiles(data)
-
-        return smiles
-
-    def smiles_to_char(self, data):
-        '''Split SMILES into array of char
-        :param data:        input data (sample size,)
-        :return char_data:  encoded data (sample size, molecule size)
-        '''
-        char_data = []
-        for i, s in enumerate(data):
-            char_data.append(np.array(list(s)))
-        # Get array from list
-        char_data = np.stack(char_data, axis=0)
-
-        return char_data
-
-    def char_to_smiles(self, char_data):
-        '''Merge array of char into SMILES
-        :param char_data:   input data (sample size, molecule size)
-        :return data:       encoded data (sample size, )
-        '''
-        data = []
-        for i in range(char_data.shape[0]):
-            data.append(''.join(char_data[i, :]))
-
-        return np.array(data)
+        return self._decode_many(one_hot)
