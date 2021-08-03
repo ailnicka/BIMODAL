@@ -79,7 +79,8 @@ class Trainer():
         else:
             raise NotImplementedError("No longer allowing other models than BIMODAL")
 
-        self._data = self._encoder.encode_from_file(self._file_name)
+        self._data = self._encoder.read_from_file(self._file_name)
+        print("Init done")
 
     def run(self, stor_dir='evaluation/'):
 
@@ -101,16 +102,16 @@ class Trainer():
         if not os.path.exists(stor_dir + '/' + self._experiment_name + '/statistic'):
             os.makedirs(stor_dir + '/' + self._experiment_name + '/statistic')
 
-        # Compute labels
-        label = np.argmax(self._data, axis=-1).astype(int)
 
         # Store total Statistics
         tot_stat = []
 
         # Shuffle data before training (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
         # to  (all_SMILES, molecular_size, encoding_size))
-        self._data, label = shuffle(self._data.reshape(-1, self._molecular_size, self._encoding_size),
-                                    label.reshape(-1, self._molecular_size))
+        self._data = shuffle(self._data.reshape(-1))
+        self._data = self._encoder.encode(self._data)
+        label = np.argmax(self._data, axis=-1).astype(int)
+
 
         for i in range(self._epochs):
             print('Epoch:', i)
@@ -155,12 +156,22 @@ class Trainer():
         if not os.path.exists(stor_dir + '/' + self._experiment_name + '/validation'):
             os.makedirs(stor_dir + '/' + self._experiment_name + '/validation')
 
-        # Compute labels
-        label = np.argmax(self._data, axis=-1).astype(int)
-
+        print("Spliting data")
         # Split data into train and test data
-        train_data, test_data, train_label, test_label = train_test_split(self._data, label, test_size= 1.0/self._n_folds,
-                                                                          random_state=1, shuffle=True)
+        train_data, test_data = train_test_split(self._data, test_size= 1.0/self._n_folds, random_state=1, shuffle=True)
+        print("Splitted data")
+
+        print(f"Encoding data {train_data.shape}")
+        train_data = self._encoder.encode(train_data)
+        print(f"Encoded data {train_data.shape}")
+        print(f"Encoding data {test_data.shape}")
+        test_data = self._encoder.encode(test_data)
+        print(f"Encoded data {test_data.shape}")
+        print(f"Creating labels")
+        train_label = np.argmax(train_data, axis=-1).astype(int)
+        print(f"Created labels {train_label.shape}")
+        test_label = np.argmax(test_data, axis=-1).astype(int)
+        print(f"Created labels {test_label.shape}")
 
         # Store total Statistics
         tot_stat = []
