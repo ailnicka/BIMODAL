@@ -91,6 +91,8 @@ class BIMODAL:
             # Iteration over batches
             for n in range(n_iter):
 
+                print(f'Batch {n} of {n_iter}')
+
                 # Set gradient to zero for batch
                 self._optimizer.zero_grad()
 
@@ -134,7 +136,6 @@ class BIMODAL:
 
                     # Append loss of current position
                     losses.append(loss.item())
-                    print(type(losses[-1]))
 
                     # Accumulate gradients
                     # (NOTE: This is more memory-efficient than summing the loss and computing the final gradient for the sum)

@@ -12,6 +12,7 @@ from sklearn.utils import shuffle
 import os
 from model.helper import clean_molecule, check_model, check_molecules
 from ast import literal_eval
+from rdkit import Chem
 
 np.random.seed(1)
 
@@ -226,6 +227,7 @@ class Trainer():
         for s in range(self._samples):
             mol = self._encoder.decode(self._model.sample(self._starting_token, self._T))
             new_molecules.append(clean_molecule(mol[0], self._model_type))
+        new_molecules, _ = self.check_chemistry(new_molecules)
         new_molecules = np.array(new_molecules)
         pd.DataFrame(new_molecules).to_csv(filename, header=None)
 
@@ -233,4 +235,21 @@ class Trainer():
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         molecules = [self._encoder.decode(mol) for mol in molecules]
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
+        molecules, score_idx = self.check_chemistry(molecules)
+        scores = [scores[i] for i in score_idx]
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename)
+
+    @staticmethod
+    def check_chemistry(molecules):
+        correct_molecules = []
+        correct_idx = []
+        for i, m in enumerate(molecules):
+            m = Chem.MolFromSmiles(m)
+            if m is not None:
+                m = Chem.MolToSmiles(m, canonical=True)
+                if len(m) > 1:
+                    correct_molecules.append(m)
+                    correct_idx.append(i)
+        return correct_molecules, correct_idx
+
+
