@@ -157,22 +157,17 @@ class Trainer():
         if not os.path.exists(stor_dir + '/' + self._experiment_name + '/validation'):
             os.makedirs(stor_dir + '/' + self._experiment_name + '/validation')
 
-        print("Spliting data")
+        print(f"Start preparing data od shape {self._data.shape}")
         # Split data into train and test data
         train_data, test_data = train_test_split(self._data, test_size= 1.0/self._n_folds, random_state=1, shuffle=True)
-        print("Splitted data")
 
-        print(f"Encoding data {train_data.shape}")
         train_data = self._encoder.encode(train_data)
-        print(f"Encoded data {train_data.shape}")
-        print(f"Encoding data {test_data.shape}")
         test_data = self._encoder.encode(test_data)
-        print(f"Encoded data {test_data.shape}")
-        print(f"Creating labels")
+
         train_label = np.argmax(train_data, axis=-1).astype(int)
-        print(f"Created labels {train_label.shape}")
+
         test_label = np.argmax(test_data, axis=-1).astype(int)
-        print(f"Created labels {test_label.shape}")
+
 
         # Store total Statistics
         tot_stat = []
@@ -180,11 +175,9 @@ class Trainer():
         # Store validation loss
         tot_loss = []
 
-
+        print(f"Start training for {self._epochs} epochs")
         for i in range(self._epochs):
             print('Epoch:', i)
-
-
             # Train model (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
             # to  (all_SMILES, molecular_size, encoding_size))
             statistic = self._model.train(train_data.reshape(-1, self._molecular_size, self._encoding_size),
@@ -210,6 +203,7 @@ class Trainer():
 
             # save model and sample molecules only over period requested by the user
             if i % self._period == 0:
+                print("Saving model and generated molecules.")
                 # Store model
                 self._model.save(
                     stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(i))

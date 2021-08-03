@@ -90,9 +90,6 @@ class BIMODAL:
 
             # Iteration over batches
             for n in range(n_iter):
-
-                print(f'Batch {n} of {n_iter}')
-
                 # Set gradient to zero for batch
                 self._optimizer.zero_grad()
 
