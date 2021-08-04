@@ -83,14 +83,38 @@ class Trainer():
         self._data = self._encoder.read_from_file(self._file_name)
         print("Init done")
 
-    def run(self, stor_dir='evaluation/'):
+    def run(self, stor_dir='evaluation/', restart=False):
 
         if self._n_folds == 0:
-            self.run_without_validation(stor_dir)
+            self.run_without_validation(stor_dir, restart)
         else:
-            self.run_with_validation(stor_dir)
+            self.run_with_validation(stor_dir, restart)
 
-    def run_without_validation(self, stor_dir='evaluation/'):
+    def _check_restart(self, stor_dir='evaluation/'):
+        # With restart read existing files
+
+        tmp_stat_file = pd.read_csv(stor_dir + '/' + self._experiment_name + '/statistic/stat.csv',
+            header=None).to_numpy()
+        if self._n_folds != 0:
+            tmp_val_file = pd.read_csv(stor_dir + '/' + self._experiment_name + '/validation/val.csv',
+                        header=None).to_numpy()
+
+        # Check if current epoch is successfully completed else continue with normal training
+        finished_epoch = -1
+        for epoch in range(self._epochs):
+            if check_model(self._experiment_name, stor_dir, epoch) and tmp_stat_file.shape[0] > epoch:
+                finished_epoch = epoch
+            else:
+                break
+        # Load model from last finished epoch
+        if finished_epoch >= 0:
+            self._model = BIMODAL(self._molecular_size, self._encoding_size,
+                                  self._learning_rate, self._hidden_units,
+                                  stor_dir + '/' + self._experiment_name + '/models/model_fold_epochs_' + str(finished_epoch))
+
+        return finished_epoch, tmp_stat_file, tmp_val_file if self._n_folds != 0 else None
+
+    def run_without_validation(self, stor_dir='evaluation/', restart=False):
         '''Training without validation on complete data'''
 
         # Create directories
@@ -113,10 +137,21 @@ class Trainer():
         self._data = self._encoder.encode(self._data)
         label = np.argmax(self._data, axis=-1).astype(int)
 
+        epoch_gen = None
+
+        if restart:
+            last_epoch, tmp_stat, _ = self._check_restart(stor_dir)
+            if last_epoch == -1:
+                restart = False
 
         for i in range(self._epochs):
             print('Epoch:', i)
-
+            if restart:
+                if last_epoch <= i:
+                    tot_stat.append(tmp_stat[i, 1:].reshape(1, -1).tolist())
+                    continue
+                else:
+                    restart = False
             # Train model
             statistic = self._model.train(self._data, label, epochs=1, batch_size=self._batch_size)
             tot_stat.append(statistic.tolist())
@@ -128,20 +163,10 @@ class Trainer():
                 header=None)
 
             # save model and sample molecules only over period requested by the user
-            if i % self._period == 0:
-                # Store model
-                self._model.save(
-                    stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(i))
+            if (i+1) % self._period == 0:
+                self.store_n_sample(stor_dir, i)
 
-                if self._generation_type in ['both', 'random']:
-                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(i) + '.csv'
-                    self.sample_random(filename)
-
-                if self._generation_type in ['both', 'beam_search']:
-                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(i) + '.csv'
-                    self.beam_search(filename)
-
-    def run_with_validation(self, stor_dir='../evaluation/'):
+    def run_with_validation(self, stor_dir='../evaluation/', restart = False):
         '''Training with validation and store data'''
 
         # Create directories
@@ -174,10 +199,24 @@ class Trainer():
 
         # Store validation loss
         tot_loss = []
+        epoch_gen = None
 
-        print(f"Start training for {self._epochs} epochs")
+        if restart:
+            last_epoch, tmp_stat, tmp_val = self._check_restart(stor_dir)
+            if last_epoch == -1:
+                restart = False
+
         for i in range(self._epochs):
             print('Epoch:', i)
+
+            if restart:
+                if last_epoch <= i:
+                    tot_stat.append(tmp_stat[i, 1:].reshape(1, -1).tolist())
+                    tot_loss.append(tmp_val[i, 1])
+                    continue
+                else:
+                    restart = False
+
             # Train model (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
             # to  (all_SMILES, molecular_size, encoding_size))
             statistic = self._model.train(train_data.reshape(-1, self._molecular_size, self._encoding_size),
@@ -202,19 +241,9 @@ class Trainer():
                 header=None)
 
             # save model and sample molecules only over period requested by the user
-            if i % self._period == 0:
+            if (i+1) % self._period == 0:
                 print("Saving model and generated molecules.")
-                # Store model
-                self._model.save(
-                    stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(i))
-
-                if self._generation_type in ['both', 'random']:
-                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(i) + '.csv'
-                    self.sample_random(filename)
-
-                if self._generation_type in ['both', 'beam_search']:
-                    filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(i) + '.csv'
-                    self.beam_search(filename)
+                self.store_n_sample(stor_dir, i)
 
     def sample_random(self, filename):
         new_molecules = []
@@ -232,6 +261,18 @@ class Trainer():
         molecules, score_idx = self.check_chemistry(molecules)
         scores = [scores[i] for i in score_idx]
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename)
+
+    def store_n_sample(self, stor_dir, epoch):
+        self._model.save(
+            stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(epoch))
+
+        if self._generation_type in ['both', 'random']:
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_epochs_' + str(epoch) + '.csv'
+            self.sample_random(filename)
+
+        if self._generation_type in ['both', 'beam_search']:
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(epoch) + '.csv'
+            self.beam_search(filename)
 
     @staticmethod
     def check_chemistry(molecules):

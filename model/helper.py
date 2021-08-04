@@ -80,7 +80,7 @@ def remove_token(mol, t='G'):
     return mol
 
 
-def check_model(model_type, model_name, stor_dir, fold, epoch):
+def check_model(model_name, stor_dir, epoch):
     '''Perform fine-tuning and store statistic,
     :param stor_dir:    directory of stored data
     :param fold:    Fold to check
@@ -88,17 +88,7 @@ def check_model(model_type, model_name, stor_dir, fold, epoch):
     :return exists_model:   True if model exists otherwise False
     '''
 
-    if model_type == 'NADE':
-        exists_model = os.path.isfile(
-            stor_dir + '/' + model_name + '/models/model_fold_' + str(fold) + '_epochs_' + str(
-                epoch) + 'backdir.dat') and \
-                       os.path.isfile(stor_dir + '/' + model_name + '/models/model_fold_' + str(
-                           fold) + '_epochs_' + str(i) + 'fordir.dat')
-    else:
-        exists_model = os.path.isfile(
-            stor_dir + '/' + model_name + '/models/model_fold_' + str(fold) + '_epochs_' + str(
-                epoch) + '.dat')
-
+    exists_model = os.path.isfile(stor_dir + '/' + model_name + '/models/model_epochs_' + str(epoch) + '.dat')
     return exists_model
 
 
@@ -111,5 +101,5 @@ def check_molecules(model_name, stor_dir, fold, epoch):
     '''
 
     return os.path.isfile(
-        stor_dir + '/' + model_name + '/molecules/molecule_fold_' + str(fold) + '_epochs_' + str(
+        stor_dir + '/' + model_name + '/molecules/molecule_epochs_' + str(
             epoch) + '.csv')
