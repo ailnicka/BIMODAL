@@ -330,7 +330,7 @@ class BIMODAL:
                 for i, x in enumerate(candidates):
 
                     preds = self._lstm(x[start:end], dir, self._device)
-                    preds = np.asarray(preds.cpu()).astype('float64')
+                    preds = np.squeeze(preds.cpu().detach().numpy()).astype('float64')
                     preds = np.log(preds)
 
                     idx_preds_sorted = np.argsort(preds)[::-1][:beam_width]
