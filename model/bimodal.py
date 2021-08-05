@@ -328,17 +328,17 @@ class BIMODAL:
                 current_scores = []
 
                 for i, x in enumerate(candidates):
-
+                    print('Candidate'+ str(x))
                     preds = self._lstm(x[start:end], dir, self._device)
                     preds = np.squeeze(preds.cpu().detach().numpy()).astype('float64')
                     preds = np.log(preds)
-
+                    print("preds" + str(preds))
                     idx_preds_sorted = np.argsort(preds)[::-1][:beam_width]
                     preds_sorted = preds[idx_preds_sorted]
 
                     for idx_pred in idx_preds_sorted:
                         # Set new token within sequence
-                        new_seq = torch.clone(x).detach()
+                        new_seq = x.clone()
                         if j % 2 == 0:
                             new_seq[end, 0, idx_pred] = 1.0
                             end += 1
@@ -355,6 +355,7 @@ class BIMODAL:
                 candidates = [x for i, x in enumerate(current_candidates) if i in idx_current_best]
                 scores = [x for i, x in enumerate(current_scores) if i in idx_current_best]
 
+        candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
         return candidates, scores
 
     def save(self, name='test_model'):
