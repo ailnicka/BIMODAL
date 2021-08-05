@@ -328,7 +328,8 @@ class BIMODAL:
                 current_scores = []
 
                 for i, x in enumerate(candidates):
-                    print('Candidate'+ str(x))
+                    print('Candidate shape ' + str(x.shape)+ ' start_end ' + str(x[start:end].shape))
+                    print('Candidate '+ str(x[start:end]))
                     preds = self._lstm(x[start:end], dir, self._device)
                     preds = np.squeeze(preds.cpu().detach().numpy()).astype('float64')
                     # to exchange linear into only positive in similar style as in random sample
