@@ -328,6 +328,7 @@ class BIMODAL:
                 current_scores = []
 
                 for i, x in enumerate(candidates):
+                    print('start '+ str(start) + ' end ' + str(end))
                     print('Candidate shape ' + str(x.shape)+ ' start_end ' + str(x[start:end].shape))
                     print('Candidate '+ str(x[start:end]))
                     preds = self._lstm(x[start:end], dir, self._device)
@@ -343,11 +344,9 @@ class BIMODAL:
                         new_seq = x.clone()
                         if j % 2 == 0:
                             new_seq[end, 0, idx_pred] = 1.0
-                            end += 1
 
                         if j % 2 == 1:
                             new_seq[start - 1, 0, idx_pred] = 1.0
-                            start -= 1
                         current_candidates.append(new_seq)
 
                     current_scores.extend([a+b for a,b in zip(scores,list(preds_sorted))])
@@ -356,6 +355,11 @@ class BIMODAL:
                 idx_current_best = np.argsort(current_scores)[::-1][:beam_width]
                 candidates = [x for i, x in enumerate(current_candidates) if i in idx_current_best]
                 scores = [x for i, x in enumerate(current_scores) if i in idx_current_best]
+                if j % 2 == 0:
+                    end += 1
+
+                if j % 2 == 1:
+                    start -= 1
 
         candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
         return candidates, scores
