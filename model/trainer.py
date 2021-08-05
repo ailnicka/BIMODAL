@@ -53,7 +53,7 @@ class Trainer():
         self._T = float(self._config['EVALUATION']['temp'])
         self._starting_token = self._encoder.encode([self._config['EVALUATION']['starting_token']])
         try:
-            self._period = self._config['EVALUATION']['period']
+            self._period = int(self._config['EVALUATION']['period'])
         except KeyError:
             self._period = 1
 
@@ -65,7 +65,7 @@ class Trainer():
             self._generation_type = 'both'
 
         try:
-            self._beam_width = self._config['EVALUATION']['beam_width']
+            self._beam_width = int(self._config['EVALUATION']['beam_width'])
         except KeyError:
             self._beam_width = 15
 
