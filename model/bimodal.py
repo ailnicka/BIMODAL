@@ -331,7 +331,8 @@ class BIMODAL:
                     print('Candidate'+ str(x))
                     preds = self._lstm(x[start:end], dir, self._device)
                     preds = np.squeeze(preds.cpu().detach().numpy()).astype('float64')
-                    preds = np.log(preds)
+                    # to exchange linear into only positive in similar style as in random sample
+                    preds = np.exp(preds) / np.sum(np.exp(preds))
                     print("preds" + str(preds))
                     idx_preds_sorted = np.argsort(preds)[::-1][:beam_width]
                     preds_sorted = preds[idx_preds_sorted]
