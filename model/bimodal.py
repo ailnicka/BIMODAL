@@ -338,7 +338,7 @@ class BIMODAL:
 
                     for idx_pred in idx_preds_sorted:
                         # Set new token within sequence
-                        new_seq = x.copy()
+                        new_seq = torch.clone(x).detach()
                         if j % 2 == 0:
                             new_seq[end, 0, idx_pred] = 1.0
                             end += 1
