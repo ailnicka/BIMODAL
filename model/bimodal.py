@@ -327,20 +327,17 @@ class BIMODAL:
                 current_candidates = []
                 current_scores = []
 
+                # grow sequence for all candidates
                 for i, x in enumerate(candidates):
-                    print('start '+ str(start) + ' end ' + str(end))
-                    print('Candidate shape ' + str(x.shape)+ ' start_end ' + str(x[start:end].shape))
-                    print('Candidate '+ str(x[start:end]))
                     preds = self._lstm(x[start:end], dir, self._device)
                     preds = np.squeeze(preds.cpu().detach().numpy()).astype('float64')
                     # to exchange linear into only positive in similar style as in random sample
                     preds = np.exp(preds) / np.sum(np.exp(preds))
-                    print("preds" + str(preds))
                     idx_preds_sorted = np.argsort(preds)[::-1][:beam_width]
                     preds_sorted = preds[idx_preds_sorted]
 
+                    # Set new token within sequence for all best tokens
                     for idx_pred in idx_preds_sorted:
-                        # Set new token within sequence
                         new_seq = x.clone()
                         if j % 2 == 0:
                             new_seq[end, 0, idx_pred] = 1.0
@@ -349,15 +346,15 @@ class BIMODAL:
                             new_seq[start - 1, 0, idx_pred] = 1.0
                         current_candidates.append(new_seq)
 
-                    current_scores.extend([a+b for a,b in zip(scores,list(preds_sorted))])
+                    current_scores.extend([a*b for a,b in zip(scores,list(preds_sorted))])
 
                 # Find the k best candidates from the scores
                 idx_current_best = np.argsort(current_scores)[::-1][:beam_width]
                 candidates = [x for i, x in enumerate(current_candidates) if i in idx_current_best]
                 scores = [x for i, x in enumerate(current_scores) if i in idx_current_best]
+                # update start and end when all candidates processed on this position
                 if j % 2 == 0:
                     end += 1
-
                 if j % 2 == 1:
                     start -= 1
 

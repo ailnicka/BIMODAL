@@ -258,8 +258,8 @@ class Trainer():
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         molecules = [self._encoder.decode(mol) for mol in molecules]
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
-        molecules, score_idx = self.check_chemistry(molecules)
-        scores = [scores[i] for i in score_idx]
+        # molecules, score_idx = self.check_chemistry(molecules)
+        # scores = [scores[i] for i in score_idx]
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename)
 
     def store_n_sample(self, stor_dir, epoch):
