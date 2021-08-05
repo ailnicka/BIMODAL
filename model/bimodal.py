@@ -346,7 +346,7 @@ class BIMODAL:
                             new_seq[start - 1, 0, idx_pred] = 1.0
                         current_candidates.append(new_seq)
 
-                    current_scores.extend([a*b for a,b in zip(scores,list(preds_sorted))])
+                    current_scores.extend([a+b for a,b in zip(scores,list(preds_sorted))])
 
                 # Find the k best candidates from the scores
                 idx_current_best = np.argsort(current_scores)[::-1][:beam_width]
