@@ -252,7 +252,7 @@ class Trainer():
             new_molecules.append(clean_molecule(mol[0], self._model_type))
         new_molecules, _ = self.check_chemistry(new_molecules)
         new_molecules = np.array(new_molecules)
-        pd.DataFrame(new_molecules).to_csv(filename, header=None)
+        pd.DataFrame(new_molecules).to_csv(filename, header=False)
 
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
@@ -260,7 +260,7 @@ class Trainer():
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
         molecules, score_idx = self.check_chemistry(molecules)
         scores = [scores[i] for i in score_idx]
-        pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename)
+        pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename, index=False)
 
     def store_n_sample(self, stor_dir, epoch):
         self._model.save(
