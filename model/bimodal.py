@@ -34,7 +34,7 @@ class BIMODAL:
             self._lstm = BiDirLSTM(input_dim=self._input_dim, hidden_dim=self._hidden_units, layers=self._layer)
 
         else:
-            self._lstm = torch.load(name = name + '.dat', layers_to_freeze= layers_to_freeze)
+            self._lstm = BiDirLSTM(name=name + '.dat', layers_to_freeze=layers_to_freeze)
 
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()
