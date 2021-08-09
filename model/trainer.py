@@ -86,7 +86,7 @@ class Trainer():
         print("Init done")
 
     def sample(self, stor_dir='evaluation/'):
-        model_name = self._start_model.split('/')[=1]
+        model_name = self._start_model.split('/')[-1]
         if self._generation_type in ['both', 'random']:
             filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_'+model_name+'.csv'
             self.sample_random(filename)
