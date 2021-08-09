@@ -6,11 +6,13 @@ import numpy as np
 from sklearn.model_selection import KFold, train_test_split, ShuffleSplit
 import pandas as pd
 import configparser
-from model.bimodal import BIMODAL
-from model.one_hot_encoder import SMILESEncoder
+import sys
+sys.path.append("./model")
+from bimodal import BIMODAL
+from one_hot_encoder import SMILESEncoder
 from sklearn.utils import shuffle
 import os
-from model.helper import clean_molecule, check_model, check_molecules
+from helper import clean_molecule, check_model, check_molecules
 from ast import literal_eval
 from rdkit import Chem
 
