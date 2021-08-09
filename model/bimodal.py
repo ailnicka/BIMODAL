@@ -31,15 +31,10 @@ class BIMODAL:
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if name is None:
-            self._lstm = BiDirLSTM(self._input_dim, self._hidden_units, self._layer)
+            self._lstm = BiDirLSTM(input_dim=self._input_dim, hidden_dim=self._hidden_units, layers=self._layer)
 
         else:
-            self._lstm = torch.load(name + '.dat', map_location=self._device)
-            if len(layers_to_freeze) != 0:
-                for layer in layers_to_freeze:
-                    for name, param in self._lstm.named_parameters():
-                        if layer in name:
-                            param.requires_grad = False
+            self._lstm = torch.load(name = name + '.dat', layers_to_freeze= layers_to_freeze)
 
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()
