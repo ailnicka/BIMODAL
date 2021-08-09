@@ -251,8 +251,8 @@ class Trainer():
         new_molecules = []
         for s in range(self._samples):
             mol = self._model.sample(self._starting_token, self._T)
-            print(str(mol))
-            mol = self._encoder.decode([mol])
+            print(str(mol.shape))
+            mol = self._encoder.decode(mol)
             print(str(mol))
             new_molecules.append(clean_molecule(mol[0], self._model_type))
         print("Random gen before chemistry")
@@ -266,8 +266,9 @@ class Trainer():
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         print("Beam search before decode")
+        print(str(molecules.shape))
         print(molecules, sep="\n")
-        molecules = self._encoder.decode([molecules])
+        molecules = self._encoder.decode(molecules)
         print("Beam search before clean")
         print(molecules, sep="\n")
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
