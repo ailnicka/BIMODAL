@@ -251,32 +251,29 @@ class Trainer():
         new_molecules = []
         for s in range(self._samples):
             mol = self._model.sample(self._starting_token, self._T)
-            print(str(mol.shape))
             mol = self._encoder.decode([mol[0]])
-            print(str(mol))
             new_molecules.append(clean_molecule(mol[0], self._model_type))
         print("Random gen before chemistry")
-        print(new_molecules, sep="\n")
+        print(str(len(new_molecules)))
         new_molecules, _ = self.check_chemistry(new_molecules)
         print("Random gen before chemistry")
-        print(new_molecules, sep="\n")
+        print(str(len(new_molecules)))
         new_molecules = np.array(new_molecules)
         pd.DataFrame(new_molecules).to_csv(filename, header=False)
 
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         print("Beam search before decode")
-        print(str(molecules))
-        print(molecules, sep="\n")
+        print(str(np.array(molecules).shape))
         molecules = self._encoder.decode(np.array(molecules))
         print("Beam search before clean")
-        print(molecules, sep="\n")
+        print(str(len(molecules)))
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
         print("Beam search before chemistry")
-        print(molecules, sep="\n")
+        print(str(len(molecules)))
         molecules, score_idx = self.check_chemistry(molecules)
         print("Beam search after chemistry")
-        print(molecules, sep="\n")
+        print(str(len(molecules)))
         scores = [scores[i] for i in score_idx]
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename, index=False)
 
