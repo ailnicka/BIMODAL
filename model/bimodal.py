@@ -361,8 +361,8 @@ class BIMODAL:
                 if j % 2 == 1:
                     start -= 1
                 print("Step", j, "width", beam_width,
-                      "Candidates shape", np.array(candidates).shape,
-                      "Candidates sum", np.array(np.array(candidates).sum()))
+                      "Candidates shape", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).shape,
+                      "Candidates sum", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).sum())
         candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
         return candidates, scores
 
