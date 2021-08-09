@@ -82,7 +82,15 @@ class Trainer():
         else:
             raise NotImplementedError("No longer allowing other models than BIMODAL")
 
-        self._data = self._encoder.read_from_file(self._file_name)
+        # Read data
+        if os.path.isfile(self._file_name + '.csv'):
+            self._data = pd.read_csv(self._file_name + '.csv', header=None).values
+        elif os.path.isfile(self._file_name + '.tar.xz'):
+            # Skip first line since empty and last line since nan
+            self._data = pd.read_csv(self._file_name + '.tar.xz', compression='xz', header=None).values[1:-1]
+        else:
+            print('CAN NOT READ DATA')
+            sys.exit()
         print("Init done")
 
     def sample(self, stor_dir='evaluation/'):
@@ -94,8 +102,6 @@ class Trainer():
         if self._generation_type in ['both', 'beam_search']:
             filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam'+model_name+'.csv'
             self.beam_search(filename)
-
-
 
     def run(self, stor_dir='evaluation/', restart=False):
 
@@ -145,13 +151,11 @@ class Trainer():
         # Store total Statistics
         tot_stat = []
 
-        # Shuffle data before training (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
-        # to  (all_SMILES, molecular_size, encoding_size))
+        print("Data before reshape", str(self._data.shape))
+        # Shuffle data before training (Data reshaped from (N_samples, N_augmentation)
+        # to  (all_SMILES))
         self._data = shuffle(self._data.reshape(-1))
-        self._data = self._encoder.encode(self._data)
-        label = np.argmax(self._data, axis=-1).astype(int)
-
-        epoch_gen = None
+        print("Data after reshape", str(self._data.shape))
 
         if restart:
             last_epoch, tmp_stat, _ = self._check_restart(stor_dir)
@@ -167,7 +171,7 @@ class Trainer():
                 else:
                     restart = False
             # Train model
-            statistic = self._model.train(self._data, label, epochs=1, batch_size=self._batch_size)
+            statistic = self._model.train(self._data, epochs=1, batch_size=self._batch_size)
             tot_stat.append(statistic.tolist())
 
             # Store statistic
@@ -196,24 +200,20 @@ class Trainer():
         if not os.path.exists(stor_dir + '/' + self._experiment_name + '/validation'):
             os.makedirs(stor_dir + '/' + self._experiment_name + '/validation')
 
-        print(f"Start preparing data od shape {self._data.shape}")
+        print(f"Start preparing data of shape {self._data.shape}")
         # Split data into train and test data
         train_data, test_data = train_test_split(self._data, test_size= 1.0/self._n_folds, random_state=1, shuffle=True)
 
-        train_data = self._encoder.encode(train_data)
-        test_data = self._encoder.encode(test_data)
-
-        train_label = np.argmax(train_data, axis=-1).astype(int)
-
-        test_label = np.argmax(test_data, axis=-1).astype(int)
-
+        print("Data before reshape", str(train_data.shape), str(test_data.shape))
+        train_data = train_data.reshape(-1)
+        test_data = test_data.reshape(-1)
+        print("Data after reshape", str(train_data.shape), str(test_data.shape))
 
         # Store total Statistics
         tot_stat = []
 
         # Store validation loss
         tot_loss = []
-        epoch_gen = None
 
         if restart:
             last_epoch, tmp_stat, tmp_val = self._check_restart(stor_dir)
@@ -231,17 +231,13 @@ class Trainer():
                 else:
                     restart = False
 
-            # Train model (Data reshaped from (N_samples, N_augmentation, molecular_size, encoding_size)
-            # to  (all_SMILES, molecular_size, encoding_size))
-            statistic = self._model.train(train_data.reshape(-1, self._molecular_size, self._encoding_size),
-                                          train_label.reshape(-1, self._molecular_size), epochs=1,
+            statistic = self._model.train(train_data, epochs=1,
                                           batch_size=self._batch_size)
             tot_stat.append(statistic.tolist())
 
             # Test model on validation set
             tot_loss.append(
-                self._model.validate(test_data.reshape(-1, self._molecular_size, self._encoding_size),
-                                     test_label.reshape(-1, self._molecular_size)))
+                self._model.validate(test_data))
 
             # Store statistic
             store_stat = np.array(tot_stat).reshape(i + 1, -1)
@@ -271,19 +267,9 @@ class Trainer():
 
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
-        print("Beam search before decode")
-        print(str(np.array(molecules).squeeze().shape))
         molecules = self._encoder.decode(np.array(molecules).squeeze())
-        print("Beam search before clean")
-        print(str(len(molecules)))
-        print(list(zip(molecules, scores)), sep="\n")
         molecules = [clean_molecule(mol, self._model_type) for mol in molecules]
-        print("Beam search before chemistry")
-        print(str(len(molecules)))
-        print(list(zip(molecules, scores)), sep="\n")
         molecules, score_idx = self.check_chemistry(molecules)
-        print("Beam search after chemistry")
-        print(str(len(molecules)))
         scores = [scores[i] for i in score_idx]
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename, index=False)
 

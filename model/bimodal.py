@@ -8,6 +8,7 @@ import torch.nn as nn
 import sys
 sys.path.append("./model")
 from bidir_lstm import BiDirLSTM
+from one_hot_encoder import SMILESEncoder
 
 
 torch.manual_seed(1)
@@ -47,6 +48,8 @@ class BIMODAL:
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()
 
+        # SMILES Encoder
+        self._encoder = SMILESEncoder()
         # Adam optimizer: only take into optimisation the un-frozen layers
         self._optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad,  self._lstm.parameters()), lr=self._lr, betas=(0.9, 0.999))
         # Cross entropy loss
@@ -58,7 +61,7 @@ class BIMODAL:
             print(name)
             print(p.shape)
 
-    def train(self, data, label, epochs=1, batch_size=1):
+    def train(self, data, epochs=1, batch_size=1):
         '''Train the model
         :param  data:   data array (n_samples, molecule_size, encoding_length)
         :param  label:  label array (n_samples, molecule_size)
@@ -66,15 +69,10 @@ class BIMODAL:
         :param  batch_size: batch size for the training
         :return statistic:  array storing computed losses (epochs, batch size)
         '''
+        print(f'BIMODAL, obtained data: {data.shape}')
 
         # Number of samples
         n_samples = data.shape[0]
-
-        # Change axes from (n_samples, molecule_size, encoding_dim) to (molecule_size, n_samples, encoding_dim)
-        data = np.swapaxes(data, 0, 1)
-
-        # Create tensor from label
-        label = torch.from_numpy(label).to(self._device)
 
         # Calculate number of batches per epoch
         if (n_samples % batch_size) is 0:
@@ -106,8 +104,20 @@ class BIMODAL:
                 # Reset model with correct batch size
                 self._lstm.new_sequence(batch_end - batch_start, self._device)
 
-                # Current batch
-                batch_data = torch.from_numpy(data[:, batch_start:batch_end, :].astype('float32')).to(self._device)
+                # encode current batch
+                batch_data = data[batch_start:batch_end]
+                print(f'BIMODAL, batch data: {batch_data.shape}')
+                batch_data = self._encoder.encode(batch_data)
+                print(f'BIMODAL, batch encoded data: {batch_data.shape}')
+                batch_label = np.argmax(batch_data, axis=-1).astype(int)
+                print(f'BIMODAL, create batch labels: {batch_label.shape}')
+                batch_label.reshape(-1, self._molecule_size)
+                print(f'BIMODAL, reshape batch labels: {batch_label.shape}')
+                batch_data = np.swapaxes(batch_data, 0, 1)
+                print(f'BIMODAL, batch swapped data: {batch_data.shape}, shall be (molecule_size, n_samples, encoding_dim)')
+
+                batch_data = torch.from_numpy(batch_data.astype('float32')).to(self._device)
+                batch_label = torch.from_numpy(batch_label).to(self._device)
 
                 # Initialize start and end position of sequence read by the model
                 start = self._molecule_size // 2
@@ -127,11 +137,11 @@ class BIMODAL:
 
                     # Compute loss and extend sequence read by the model
                     if j % 2 == 0:
-                        loss = self._loss(pred, label[batch_start:batch_end, end])
+                        loss = self._loss(pred, batch_label[:, end])
                         end += 1
 
                     else:
-                        loss = self._loss(pred, label[batch_start:batch_end, start - 1])
+                        loss = self._loss(pred, batch_label[:, start - 1])
                         start -= 1
 
                     # Append loss of current position
@@ -149,7 +159,7 @@ class BIMODAL:
 
         return statistic
 
-    def validate(self, data, label, batch_size=128):
+    def validate(self, data, batch_size=128):
         ''' Validation of model and compute error
         :param data:    test data (n_samples, molecule_size, encoding_size)
         :param label:   label data (n_samples_molecules_size)
@@ -157,19 +167,15 @@ class BIMODAL:
         :return:            mean loss over test data
         '''
 
+
         # Use train mode to get loss consistent with training
         self._lstm.train()
 
         # Gradient is not compute to reduce memory requirements
         with torch.no_grad():
-            # Compute tensor of labels
-            label = torch.from_numpy(label).to(self._device)
-
             # Number of samples
             n_samples = data.shape[0]
 
-            # Change axes from (n_samples, molecule_size, encoding_dim) to (molecule_size , n_samples, encoding_dim)
-            data = np.swapaxes(data, 0, 1).astype('float32')
 
             # Initialize loss for complete validation set
             tot_loss = 0
@@ -187,7 +193,21 @@ class BIMODAL:
                 batch_end = min((n + 1) * batch_size, n_samples)
 
                 # Data used in this batch
-                batch_data = torch.from_numpy(data[:, batch_start:batch_end, :].astype('float32')).to(self._device)
+                # encode current batch
+                batch_data = data[batch_start:batch_end]
+                print(f'BIMODAL, batch data: {batch_data.shape}')
+                batch_data = self._encoder.encode(batch_data)
+                print(f'BIMODAL, batch encoded data: {batch_data.shape}')
+                batch_label = np.argmax(batch_data, axis=-1).astype(int)
+                print(f'BIMODAL, create batch labels: {batch_label.shape}')
+                batch_label.reshape(-1, self._molecule_size)
+                print(f'BIMODAL, reshape batch labels: {batch_label.shape}')
+                batch_data = np.swapaxes(batch_data, 0, 1)
+                print(
+                    f'BIMODAL, batch swapped data: {batch_data.shape}, shall be (molecule_size, n_samples, encoding_dim)')
+
+                batch_data = torch.from_numpy(batch_data.astype('float32')).to(self._device)
+                batch_label = torch.from_numpy(batch_label).to(self._device)
 
                 # Initialize loss for molecule
                 molecule_loss = 0
@@ -212,11 +232,11 @@ class BIMODAL:
 
                     # Extend reading of the sequence
                     if j % 2 == 0:
-                        loss = self._loss(pred, label[batch_start:batch_end, end])
+                        loss = self._loss(pred, batch_label[:, end])
                         end += 1
 
                     if j % 2 == 1:
-                        loss = self._loss(pred, label[batch_start:batch_end, start - 1])
+                        loss = self._loss(pred, batch_label[:, start - 1])
                         start -= 1
 
                     # Sum loss over molecule
@@ -360,9 +380,9 @@ class BIMODAL:
                     end += 1
                 if j % 2 == 1:
                     start -= 1
-                print("Step", j, "width", beam_width,
-                      "Candidates shape", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).shape,
-                      "Candidates sum", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).sum())
+        #         print("Step", j, "width", beam_width,
+        #               "Candidates shape", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).shape,
+        #               "Candidates sum", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).sum())
         candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
         return candidates, scores
 

@@ -7,7 +7,7 @@ import os
 import sys
 
 
-class SMILESEncoder():
+class SMILESEncoder:
 
     def __init__(self):
         # Allowed tokens (adapted from default dictionary)
