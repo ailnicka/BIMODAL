@@ -86,13 +86,13 @@ class Trainer():
         print("Init done")
 
     def sample(self, stor_dir='evaluation/'):
-
+        model_name = self._start_model.split('/')[=1]
         if self._generation_type in ['both', 'random']:
-            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_model_' + str(self._start_model) + '.csv'
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_'+model_name+'.csv'
             self.sample_random(filename)
 
         if self._generation_type in ['both', 'beam_search']:
-            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(self._start_model) + '.csv'
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam'+model_name+'.csv'
             self.beam_search(filename)
 
 
