@@ -348,8 +348,8 @@ class BIMODAL:
                         if j % 2 == 1:
                             new_seq[start - 1, 0, idx_pred] = 1.0
                         current_candidates.append(new_seq)
-
-                    current_scores.extend([a+b for a,b in zip(scores,list(preds_sorted))])
+                    # multiply the "probability" of new token by old probability
+                    current_scores.extend([a*b for a,b in zip(scores,list(preds_sorted))])
 
                 # Find the k best candidates from the scores
                 idx_current_best = np.argsort(current_scores)[::-1][:beam_width]

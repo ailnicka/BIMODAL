@@ -85,6 +85,18 @@ class Trainer():
         self._data = self._encoder.read_from_file(self._file_name)
         print("Init done")
 
+    def sample(self, stor_dir='evaluation/'):
+
+        if self._generation_type in ['both', 'random']:
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_model_' + str(self._start_model) + '.csv'
+            self.sample_random(filename)
+
+        if self._generation_type in ['both', 'beam_search']:
+            filename = stor_dir + '/' + self._experiment_name + '/molecules/molecule_beam_epochs_' + str(self._start_model) + '.csv'
+            self.beam_search(filename)
+
+
+
     def run(self, stor_dir='evaluation/', restart=False):
 
         if self._n_folds == 0:
@@ -264,6 +276,7 @@ class Trainer():
         molecules = self._encoder.decode(np.array(molecules).squeeze())
         print("Beam search before clean")
         print(str(len(molecules)))
+        print(list(zip(molecules, scores)), sep="\n")
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
         print("Beam search before chemistry")
         print(str(len(molecules)))
