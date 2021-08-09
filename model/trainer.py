@@ -277,7 +277,7 @@ class Trainer():
         print("Beam search before clean")
         print(str(len(molecules)))
         print(list(zip(molecules, scores)), sep="\n")
-        molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
+        molecules = [clean_molecule(mol, self._model_type) for mol in molecules]
         print("Beam search before chemistry")
         print(str(len(molecules)))
         print(list(zip(molecules, scores)), sep="\n")
