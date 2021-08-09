@@ -41,7 +41,7 @@ class BIMODAL:
             if len(layers_to_freeze) != 0:
                 for layer in layers_to_freeze:
                     for name, param in self._lstm.named_parameters():
-                        if layer in name:
+                        if str(layer) in name:
                             param.requires_grad = False
 
         if torch.cuda.is_available():
