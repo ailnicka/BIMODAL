@@ -5,7 +5,8 @@ Implementation of BIMODAL to generate SMILES
 import numpy as np
 import torch
 import torch.nn as nn
-from model.bidir_lstm import BiDirLSTM
+from bidir_lstm import BiDirLSTM
+import bidir_lstm
 
 torch.manual_seed(1)
 np.random.seed(5)
@@ -34,7 +35,12 @@ class BIMODAL:
             self._lstm = BiDirLSTM(input_dim=self._input_dim, hidden_dim=self._hidden_units, layers=self._layer)
 
         else:
-            self._lstm = BiDirLSTM(name=name + '.dat', layers_to_freeze=layers_to_freeze)
+            self._lstm = torch.load(name+'.dat', map_location=self._device)
+            if len(layers_to_freeze) != 0:
+                for layer in layers_to_freeze:
+                    for name, param in self._lstm.named_parameters():
+                        if layer in name:
+                            param.requires_grad = False
 
         if torch.cuda.is_available():
             self._lstm = self._lstm.cuda()

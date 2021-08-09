@@ -11,54 +11,46 @@ class BiDirLSTM(nn.Module):
     def __init__(self, input_dim=110, hidden_dim=256, layers=2, name=None, layers_to_freeze=[]):
         super(BiDirLSTM, self).__init__()
 
-        if name is None:
-            # Dimensions
-            self._input_dim = input_dim
-            self._hidden_dim = hidden_dim
-            self._output_dim = input_dim
+        # Dimensions
+        self._input_dim = input_dim
+        self._hidden_dim = hidden_dim
+        self._output_dim = input_dim
 
-            # Number of LSTM layers
-            self._layers = layers
+        # Number of LSTM layers
+        self._layers = layers
 
-            # LSTM for forward and backward direction
-            self._blstm = nn.LSTM(input_size=self._input_dim, hidden_size=self._hidden_dim, num_layers=layers,
-                                  dropout=0.3, bidirectional=True)
+        # LSTM for forward and backward direction
+        self._blstm = nn.LSTM(input_size=self._input_dim, hidden_size=self._hidden_dim, num_layers=layers,
+                              dropout=0.3, bidirectional=True)
 
-            # All weights initialized with xavier uniform
-            nn.init.xavier_uniform_(self._blstm.weight_ih_l0)
-            nn.init.xavier_uniform_(self._blstm.weight_ih_l1)
-            nn.init.orthogonal_(self._blstm.weight_hh_l0)
-            nn.init.orthogonal_(self._blstm.weight_hh_l1)
+        # All weights initialized with xavier uniform
+        nn.init.xavier_uniform_(self._blstm.weight_ih_l0)
+        nn.init.xavier_uniform_(self._blstm.weight_ih_l1)
+        nn.init.orthogonal_(self._blstm.weight_hh_l0)
+        nn.init.orthogonal_(self._blstm.weight_hh_l1)
 
-            # Bias initialized with zeros expect the bias of the forget gate
-            self._blstm.bias_ih_l0.data.fill_(0.0)
-            self._blstm.bias_ih_l0.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
+        # Bias initialized with zeros expect the bias of the forget gate
+        self._blstm.bias_ih_l0.data.fill_(0.0)
+        self._blstm.bias_ih_l0.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
 
-            self._blstm.bias_ih_l1.data.fill_(0.0)
-            self._blstm.bias_ih_l1.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
+        self._blstm.bias_ih_l1.data.fill_(0.0)
+        self._blstm.bias_ih_l1.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
 
-            self._blstm.bias_hh_l0.data.fill_(0.0)
-            self._blstm.bias_hh_l0.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
+        self._blstm.bias_hh_l0.data.fill_(0.0)
+        self._blstm.bias_hh_l0.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
 
-            self._blstm.bias_hh_l1.data.fill_(0.0)
-            self._blstm.bias_hh_l1.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
+        self._blstm.bias_hh_l1.data.fill_(0.0)
+        self._blstm.bias_hh_l1.data[self._hidden_dim:2 * self._hidden_dim].fill_(1.0)
 
-            # Batch normalization (Weights initialized with one and bias with zero)
-            self._norm_0 = nn.LayerNorm(self._input_dim, eps=.001)
-            self._norm_1 = nn.LayerNorm(2 * self._hidden_dim, eps=.001)
+        # Batch normalization (Weights initialized with one and bias with zero)
+        self._norm_0 = nn.LayerNorm(self._input_dim, eps=.001)
+        self._norm_1 = nn.LayerNorm(2 * self._hidden_dim, eps=.001)
 
-            # Separate linear model for forward and backward computation
-            self._wpred = nn.Linear(2 * self._hidden_dim, self._output_dim)
-            nn.init.xavier_uniform_(self._wpred.weight)
-            self._wpred.bias.data.fill_(0.0)
+        # Separate linear model for forward and backward computation
+        self._wpred = nn.Linear(2 * self._hidden_dim, self._output_dim)
+        nn.init.xavier_uniform_(self._wpred.weight)
+        self._wpred.bias.data.fill_(0.0)
 
-        else:
-            self._lstm = torch.load(name)
-            if len(layers_to_freeze) != 0:
-                for layer in layers_to_freeze:
-                    for name, param in self._lstm.named_parameters():
-                        if layer in name:
-                            param.requires_grad = False
 
     def _init_hidden(self, batch_size, device):
         '''Initialize hidden states
