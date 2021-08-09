@@ -53,7 +53,7 @@ class BiDirLSTM(nn.Module):
             self._wpred.bias.data.fill_(0.0)
 
         else:
-            self._lstm = torch.load(name + '.dat')
+            self._lstm = torch.load(name)
             if len(layers_to_freeze) != 0:
                 for layer in layers_to_freeze:
                     for name, param in self._lstm.named_parameters():
