@@ -253,19 +253,15 @@ class Trainer():
             mol = self._model.sample(self._starting_token, self._T)
             mol = self._encoder.decode([mol[0]])
             new_molecules.append(clean_molecule(mol[0], self._model_type))
-        print("Random gen before chemistry")
-        print(str(len(new_molecules)))
         new_molecules, _ = self.check_chemistry(new_molecules)
-        print("Random gen before chemistry")
-        print(str(len(new_molecules)))
         new_molecules = np.array(new_molecules)
         pd.DataFrame(new_molecules).to_csv(filename, header=False)
 
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         print("Beam search before decode")
-        print(str(np.array(molecules).shape))
-        molecules = self._encoder.decode(np.array(molecules))
+        print(str(np.array(molecules).squeeze().shape))
+        molecules = self._encoder.decode(np.array(molecules).squeeze())
         print("Beam search before clean")
         print(str(len(molecules)))
         molecules = [clean_molecule(mol[0], self._model_type) for mol in molecules]
