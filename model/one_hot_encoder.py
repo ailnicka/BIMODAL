@@ -32,7 +32,7 @@ class SMILESEncoder():
         return np.array([self._id_matrix[self._token_to_idx[char]] for char in molecule])
 
     def _decode_one(self, encoding):
-        return ''.join(self._tokens[np.argmax(encoding).astype(int)])
+        return ''.join(self._tokens[np.argmax(encoding, axis=1).astype(int)])
 
     def read_from_file(self, name='data'):
         '''One-hot-encoding from .csv file
