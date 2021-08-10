@@ -111,7 +111,7 @@ class BIMODAL:
                 print(f'BIMODAL, batch encoded data: {batch_data.shape}')
                 batch_label = np.argmax(batch_data, axis=-1).astype(int)
                 print(f'BIMODAL, create batch labels: {batch_label.shape}')
-                batch_label.reshape(-1, self._molecule_size)
+                batch_label = batch_label.reshape(-1, self._molecule_size)
                 print(f'BIMODAL, reshape batch labels: {batch_label.shape}')
                 batch_data = np.swapaxes(batch_data, 0, 1)
                 print(f'BIMODAL, batch swapped data: {batch_data.shape}, shall be (molecule_size, n_samples, encoding_dim)')
@@ -133,14 +133,17 @@ class BIMODAL:
                         dir = 'left'
 
                     # Predict next token
+                    print(f'Input data for step {j}: {batch_data[start:end].shape}')
                     pred = self._lstm(batch_data[start:end], dir, self._device)
 
                     # Compute loss and extend sequence read by the model
                     if j % 2 == 0:
+                        print(f'Pred and Batch label step {j}:{pred.shape}; {batch_label[:, end].shape}')
                         loss = self._loss(pred, batch_label[:, end])
                         end += 1
 
                     else:
+                        print(f'Pred and Batch label step {j}:{pred.shape}; {batch_label[:, start-1].shape}')
                         loss = self._loss(pred, batch_label[:, start - 1])
                         start -= 1
 
@@ -175,7 +178,6 @@ class BIMODAL:
         with torch.no_grad():
             # Number of samples
             n_samples = data.shape[0]
-
 
             # Initialize loss for complete validation set
             tot_loss = 0
