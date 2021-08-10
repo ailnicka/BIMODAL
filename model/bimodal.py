@@ -69,7 +69,6 @@ class BIMODAL:
         :param  batch_size: batch size for the training
         :return statistic:  array storing computed losses (epochs, batch size)
         '''
-        print(f'BIMODAL, obtained data: {data.shape}')
 
         # Number of samples
         n_samples = data.shape[0]
@@ -106,15 +105,9 @@ class BIMODAL:
 
                 # encode current batch
                 batch_data = data[batch_start:batch_end]
-                print(f'BIMODAL, batch data: {batch_data.shape}')
                 batch_data = self._encoder.encode(batch_data)
-                print(f'BIMODAL, batch encoded data: {batch_data.shape}')
                 batch_label = np.argmax(batch_data, axis=-1).astype(int)
-                print(f'BIMODAL, create batch labels: {batch_label.shape}')
-                batch_label = batch_label.reshape(-1, self._molecule_size)
-                print(f'BIMODAL, reshape batch labels: {batch_label.shape}')
                 batch_data = np.swapaxes(batch_data, 0, 1)
-                print(f'BIMODAL, batch swapped data: {batch_data.shape}, shall be (molecule_size, n_samples, encoding_dim)')
 
                 batch_data = torch.from_numpy(batch_data.astype('float32')).to(self._device)
                 batch_label = torch.from_numpy(batch_label).to(self._device)
@@ -133,17 +126,14 @@ class BIMODAL:
                         dir = 'left'
 
                     # Predict next token
-                    print(f'Input data for step {j}: {batch_data[start:end].shape}')
                     pred = self._lstm(batch_data[start:end], dir, self._device)
 
                     # Compute loss and extend sequence read by the model
                     if j % 2 == 0:
-                        print(f'Pred and Batch label step {j}:{pred.shape}; {batch_label[:, end].shape}')
                         loss = self._loss(pred, batch_label[:, end])
                         end += 1
 
                     else:
-                        print(f'Pred and Batch label step {j}:{pred.shape}; {batch_label[:, start-1].shape}')
                         loss = self._loss(pred, batch_label[:, start - 1])
                         start -= 1
 
@@ -197,16 +187,9 @@ class BIMODAL:
                 # Data used in this batch
                 # encode current batch
                 batch_data = data[batch_start:batch_end]
-                print(f'BIMODAL, batch data: {batch_data.shape}')
                 batch_data = self._encoder.encode(batch_data)
-                print(f'BIMODAL, batch encoded data: {batch_data.shape}')
                 batch_label = np.argmax(batch_data, axis=-1).astype(int)
-                print(f'BIMODAL, create batch labels: {batch_label.shape}')
-                batch_label.reshape(-1, self._molecule_size)
-                print(f'BIMODAL, reshape batch labels: {batch_label.shape}')
                 batch_data = np.swapaxes(batch_data, 0, 1)
-                print(
-                    f'BIMODAL, batch swapped data: {batch_data.shape}, shall be (molecule_size, n_samples, encoding_dim)')
 
                 batch_data = torch.from_numpy(batch_data.astype('float32')).to(self._device)
                 batch_label = torch.from_numpy(batch_label).to(self._device)
