@@ -147,7 +147,6 @@ class Trainer():
         if not os.path.exists(stor_dir + '/' + self._experiment_name + '/statistic'):
             os.makedirs(stor_dir + '/' + self._experiment_name + '/statistic')
 
-
         # Store total Statistics
         tot_stat = []
 
@@ -252,7 +251,7 @@ class Trainer():
 
             # save model and sample molecules only over period requested by the user
             if (i+1) % self._period == 0:
-                print("Saving model and generated molecules.")
+                print("Saving model and generating molecules.")
                 self.store_n_sample(stor_dir, i)
 
     def sample_random(self, filename):
@@ -261,16 +260,20 @@ class Trainer():
             mol = self._model.sample(self._starting_token, self._T)
             mol = self._encoder.decode([mol[0]])
             new_molecules.append(clean_molecule(mol[0], self._model_type))
+        print(f'Generated {len(new_molecules)} molecules with random sampling')
         new_molecules, _ = self.check_chemistry(new_molecules)
+        print(f'Chemistry check survived {len(new_molecules)} molecules')
         new_molecules = np.array(new_molecules)
-        pd.DataFrame(new_molecules).to_csv(filename, header=False)
+        pd.DataFrame(new_molecules).to_csv(filename, header=False, index=False)
 
     def beam_search(self, filename):
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         molecules = self._encoder.decode(np.array(molecules).squeeze())
+        print(f'Generated {len(molecules)} molecules with beam search')
         molecules = [clean_molecule(mol, self._model_type) for mol in molecules]
         molecules, score_idx = self.check_chemistry(molecules)
         scores = [scores[i] for i in score_idx]
+        print(f'Chemistry check survived {len(molecules)} molecules')
         pd.DataFrame(dict(molecules=molecules, scores=scores)).to_csv(filename, index=False)
 
     def store_n_sample(self, stor_dir, epoch):
