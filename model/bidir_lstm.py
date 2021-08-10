@@ -8,7 +8,7 @@ import numpy as np
 
 class BiDirLSTM(nn.Module):
 
-    def __init__(self, input_dim=110, hidden_dim=256, layers=2, name=None, layers_to_freeze=[]):
+    def __init__(self, input_dim=110, hidden_dim=256, layers=2):
         super(BiDirLSTM, self).__init__()
 
         # Dimensions
@@ -50,7 +50,6 @@ class BiDirLSTM(nn.Module):
         self._wpred = nn.Linear(2 * self._hidden_dim, self._output_dim)
         nn.init.xavier_uniform_(self._wpred.weight)
         self._wpred.bias.data.fill_(0.0)
-
 
     def _init_hidden(self, batch_size, device):
         '''Initialize hidden states

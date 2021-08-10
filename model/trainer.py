@@ -12,7 +12,7 @@ from bimodal import BIMODAL
 from one_hot_encoder import SMILESEncoder
 from sklearn.utils import shuffle
 import os
-from helper import clean_molecule, check_model, check_molecules
+from helper import clean_molecule, check_model
 from ast import literal_eval
 from rdkit import Chem
 
