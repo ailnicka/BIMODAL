@@ -132,7 +132,7 @@ class Trainer():
         if finished_epoch >= 0:
             self._model = BIMODAL(self._molecular_size, self._encoding_size,
                                   self._learning_rate, self._hidden_units,
-                                  stor_dir + '/' + self._experiment_name + '/models/model_fold_epochs_' + str(finished_epoch))
+                                  stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(finished_epoch))
 
         return finished_epoch, tmp_stat_file, tmp_val_file
 
