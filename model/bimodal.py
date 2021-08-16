@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import sys
+import os
 sys.path.append("./model")
 from bidir_lstm import BiDirLSTM
 from one_hot_encoder import SMILESEncoder
@@ -38,6 +39,7 @@ class BIMODAL:
             self._lstm = BiDirLSTM(input_dim=self._input_dim, hidden_dim=self._hidden_units, layers=self._layer)
 
         else:
+            print(os.getcwd())
             self._lstm = torch.load(name+'.dat', map_location=self._device)
             if len(layers_to_freeze) != 0:
                 for layer in layers_to_freeze:
