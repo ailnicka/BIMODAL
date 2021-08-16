@@ -118,11 +118,13 @@ class Trainer():
         if self._n_folds != 0:
             tmp_val_file = pd.read_csv(stor_dir + '/' + self._experiment_name + '/validation/val.csv',
                         header=None).to_numpy()
+        else:
+            tmp_val_file = None
 
-        # Check if current epoch is successfully completed else continue with normal training
+        # Check how many epochs are finished
         finished_epoch = -1
         for epoch in range(self._epochs):
-            if check_model(self._experiment_name, stor_dir, epoch) and tmp_stat_file.shape[0] > epoch:
+            if check_model(self._experiment_name, stor_dir, epoch):
                 finished_epoch = epoch
             else:
                 break
@@ -132,7 +134,7 @@ class Trainer():
                                   self._learning_rate, self._hidden_units,
                                   stor_dir + '/' + self._experiment_name + '/models/model_fold_epochs_' + str(finished_epoch))
 
-        return finished_epoch, tmp_stat_file, tmp_val_file if self._n_folds != 0 else None
+        return finished_epoch, tmp_stat_file, tmp_val_file
 
     def run_without_validation(self, stor_dir='evaluation/', restart=False):
         '''Training without validation on complete data'''
