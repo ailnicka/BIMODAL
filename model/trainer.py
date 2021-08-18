@@ -273,7 +273,9 @@ class Trainer():
         molecules, scores = self._model.beam_search(self._starting_token, self._beam_width)
         molecules = self._encoder.decode(np.array(molecules).squeeze())
         print(f'Generated {len(molecules)} molecules with beam search')
+        print(f'Molecules before cleaning: {molecules}')
         molecules = [clean_molecule(mol, self._model_type) for mol in molecules]
+        print(f'Molecules after cleaning: {molecules}')
         molecules, score_idx = self.check_chemistry(molecules)
         scores = [scores[i] for i in score_idx]
         print(f'Chemistry check survived {len(molecules)} molecules')
