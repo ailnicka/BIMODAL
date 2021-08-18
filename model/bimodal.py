@@ -362,14 +362,18 @@ class BIMODAL:
                 idx_current_best = np.argsort(current_scores)[::-1][:beam_width]
                 candidates = [x for i, x in enumerate(current_candidates) if i in idx_current_best]
                 scores = [x for i, x in enumerate(current_scores) if i in idx_current_best]
+
                 # update start and end when all candidates processed on this position
                 if j % 2 == 0:
                     end += 1
                 if j % 2 == 1:
                     start -= 1
-        #         print("Step", j, "width", beam_width,
-        #               "Candidates shape", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).shape,
-        #               "Candidates sum", np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]).sum())
+
+                print("Step ", j, " width ", beam_width,
+                      "Candidates ",
+                      self._encoder.decode(np.array([x[start:end].cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates])),
+                      "Scores ", scores)
+
         candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
         return candidates, scores
 
