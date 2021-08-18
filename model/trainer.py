@@ -124,7 +124,7 @@ class Trainer():
         # Check how many epochs are finished
         finished_epoch = -1
         for epoch in range(self._epochs):
-            if check_model(self._experiment_name, stor_dir, epoch):
+            if check_model(self._experiment_name, stor_dir, epoch) and (tmp_stat_file.shape[0] <= epoch):
                 finished_epoch = epoch
             else:
                 break
@@ -133,6 +133,7 @@ class Trainer():
             self._model = BIMODAL(self._molecular_size, self._encoding_size,
                                   self._learning_rate, self._hidden_units,
                                   stor_dir + '/' + self._experiment_name + '/models/model_epochs_' + str(finished_epoch))
+        print(f'Restarting from epoch {finished_epoch}')
 
         return finished_epoch, tmp_stat_file, tmp_val_file
 
