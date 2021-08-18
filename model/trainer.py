@@ -167,7 +167,7 @@ class Trainer():
         for i in range(self._epochs):
             print('Epoch:', i)
             if restart:
-                if last_epoch <= i:
+                if last_epoch >= i:
                     tot_stat.append(tmp_stat[i, 1:].reshape(1, -1).tolist())
                     continue
                 else:
@@ -226,7 +226,7 @@ class Trainer():
             print('Epoch:', i)
 
             if restart:
-                if last_epoch <= i:
+                if last_epoch >= i:
                     tot_stat.append(tmp_stat[i, 1:].reshape(1, -1).tolist())
                     tot_loss.append(tmp_val[i, 1])
                     continue
