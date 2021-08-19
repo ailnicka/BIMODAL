@@ -124,7 +124,7 @@ class Trainer():
         # Check how many epochs are finished
         finished_epoch = -1
         for epoch in range(self._epochs):
-            if check_model(self._experiment_name, stor_dir, epoch) and (tmp_stat_file.shape[0] <= epoch):
+            if check_model(self._experiment_name, stor_dir, epoch) and (tmp_stat_file.shape[0] >= epoch):
                 finished_epoch = epoch
             else:
                 break
