@@ -369,9 +369,9 @@ class BIMODAL:
                 if j % 2 == 1:
                     start -= 1
 
-                print("Step ", j, " width ", beam_width,
+                print("Step ", j,
                       "Candidates ",
-                      self._encoder.decode(np.array([x[start:end].cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates])),
+                      self._encoder.decode(np.array([x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim)[:, start:end, :] for x in candidates])),
                       "Scores ", scores)
 
         candidates = [x.cpu().numpy().reshape(1, self._molecule_size, self._output_dim) for x in candidates]
